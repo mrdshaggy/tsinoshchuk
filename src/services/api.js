@@ -100,13 +100,122 @@ async function searchSilpoProducts(branchId, externalId, query) {
   }));
 }
 
+// ── METRO ────────────────────────────────────────────────────
+
+const METRO_HEADERS = { 'x-sd-token': 'mq6k5cu8', Accept: 'application/json' };
+
+async function getMetroStores() {
+  const params = new URLSearchParams({
+    s: '{0F3B38A3-7330-4544-B95B-81FC80A6BB6F}',
+    sig: 'store-locator',
+    p: '30',
+    v: '{BECE07BD-19B3-4E41-9C8F-E9D9EC85574F}',
+    itemid: '{871024E5-B25D-4FFD-8AF1-29C3FDF1DD11}',
+    o: 'Distance,Ascending',
+    g: '49.0,31.0',
+  });
+  const res = await fetch(`/metro-www/sxa/search/results?${params}`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+
+  return (data.Results ?? []).flatMap((result) => {
+    const html = result.Html ?? '';
+    const valueMatch = html.match(/name="store"\s+value="(\d+)"/);
+    if (!valueMatch) return [];
+    const nameMatch = html.match(/class="field-store-name">\s*([^\r\n<]+)/);
+    const addrMatch = html.match(/class="field-address">\s*([^\r\n<]+)/);
+    const geo = result.Geospatial;
+    return [{
+      id: valueMatch[1].padStart(5, '0'),
+      title: `METRO ${nameMatch?.[1]?.trim() ?? valueMatch[1]}`,
+      address: addrMatch?.[1]?.trim() ?? '',
+      coordinates: { latitude: geo?.Latitude ?? 0, longitude: geo?.Longitude ?? 0 },
+    }];
+  });
+}
+
+function metroDeliveryDate() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function metroWeight(contentData, grossWeight) {
+  if (contentData?.netContentVolume) {
+    const { value, uom } = contentData.netContentVolume;
+    if (uom === 'ML') return value >= 1000 ? `${value / 1000} л` : `${value} мл`;
+    if (uom === 'L') return `${value} л`;
+  }
+  if (contentData?.netPieceWeight) {
+    const { value, uom } = contentData.netPieceWeight;
+    if (uom === 'GRAM') return value >= 1000 ? `${value / 1000} кг` : `${value} г`;
+    if (uom === 'KG') return `${value} кг`;
+  }
+  if (grossWeight) return `${grossWeight} кг`;
+  return null;
+}
+
+async function searchMetroProducts(storeId, query) {
+  const searchParams = new URLSearchParams({
+    storeId, language: 'uk-UA', country: 'UA', query, rows: '24', page: '1',
+  });
+  const searchRes = await fetch(`/metro-api/searchdiscover/articlesearch/search?${searchParams}`, {
+    headers: METRO_HEADERS,
+  });
+  if (!searchRes.ok) throw new Error(`HTTP ${searchRes.status}`);
+  const searchData = await searchRes.json();
+
+  const resultIds = (searchData.resultIds ?? []).filter(
+    (id) => searchData.results?.[id]?.isAvailable !== false,
+  );
+  if (resultIds.length === 0) return [];
+
+  const priceMap = {};
+  for (const [id, info] of Object.entries(searchData.results ?? {})) {
+    if (info.price != null) priceMap[id] = info.price;
+  }
+
+  const varParams = new URLSearchParams({
+    storeIds: storeId, country: 'UA', locale: 'uk-UA', deliveryDate: metroDeliveryDate(),
+  });
+  for (const id of resultIds) varParams.append('ids', id);
+
+  const varRes = await fetch(`/metro-api/evaluate.article.v1/betty-variants?${varParams}`, {
+    headers: METRO_HEADERS,
+  });
+  if (!varRes.ok) throw new Error(`HTTP ${varRes.status}`);
+  const varData = await varRes.json();
+
+  return resultIds.flatMap((id) => {
+    const variant = varData.result?.[id.slice(0, -4)]?.variants?.[id.slice(-4)];
+    if (!variant) return [];
+    const bundle = variant.bundles ? Object.values(variant.bundles)[0] : null;
+    return [{
+      ean: id,
+      title: variant.description,
+      weight: metroWeight(bundle?.contentData, bundle?.grossWeight),
+      img: variant.imageUrlL ?? variant.imageUrl ?? null,
+      price: priceMap[id] ?? null,
+      oldPrice: null,
+    }];
+  });
+}
+
+// ── Public API ───────────────────────────────────────────────
+
 export async function getStores(hub) {
   if (hub === 'silpo') return getSilpoStores();
+  if (hub === 'metro') return getMetroStores();
   const chainKey = Object.keys(CHAINS).find((k) => CHAINS[k].hub === hub);
   return mockGetStores(chainKey);
 }
 
 export async function searchProducts(store, query, chainKey) {
   if (chainKey === 'silpo') return searchSilpoProducts(store.id, store.externalId, query);
+  if (chainKey === 'metro') return searchMetroProducts(store.id, query);
   return mockSearchProducts(store.id, chainKey, query);
 }

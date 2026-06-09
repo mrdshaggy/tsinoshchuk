@@ -2,45 +2,26 @@ export default function Logo({ size = 44 }) {
   return (
     <svg
       width={size}
-      height={size}
-      viewBox="0 0 44 44"
-      fill="none"
+      viewBox="0 0 248 340"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* Background tile */}
-      <rect width="44" height="44" rx="11" fill="#4f46e5" />
+      <path d="M124 0 C55 0 0 55 0 124 C0 196 124 320 124 320 C124 320 248 196 248 124 C248 55 193 0 124 0 Z" fill="#2563EB" />
+      <circle cx="124" cy="120" r="72" fill="white" opacity="0.97" />
 
-      {/* Shopping bag body */}
-      <path
-        d="M14 19.5h16l-1.8 10.5H15.8L14 19.5Z"
-        fill="white"
-      />
+      <path d="M88 104 Q88 84 108 84" fill="none" stroke="#2563EB" strokeWidth="7" strokeLinecap="round" />
+      <path d="M140 84 Q160 84 160 104" fill="none" stroke="#2563EB" strokeWidth="7" strokeLinecap="round" />
 
-      {/* Bag handle */}
-      <path
-        d="M18 19.5v-3.5a4 4 0 0 1 8 0v3.5"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-      />
+      <rect x="74" y="106" width="100" height="60" rx="10" fill="#2563EB" />
 
-      {/* Location pin — sits bottom-right, partly over bag */}
-      <circle cx="30.5" cy="28.5" r="7" fill="#FF8521" />
-      {/* Pin dot */}
-      <circle cx="30.5" cy="27" r="2" fill="white" />
-      {/* Pin bottom point */}
-      <path
-        d="M30.5 29a4.5 4.5 0 0 0 3.5-4.5 3.5 3.5 0 1 0-7 0A4.5 4.5 0 0 0 30.5 29Z"
-        fill="white"
-        fillOpacity="0"
-      />
-      <path
-        d="M27 26.5a3.5 3.5 0 1 1 7 0c0 1.8-3.5 5-3.5 5s-3.5-3.2-3.5-5Z"
-        fill="white"
-      />
-      <circle cx="30.5" cy="26.5" r="1.3" fill="#FF8521" />
+      <line x1="100" y1="108" x2="100" y2="164" stroke="white" strokeWidth="2" opacity="0.35" />
+      <line x1="124" y1="108" x2="124" y2="164" stroke="white" strokeWidth="2" opacity="0.35" />
+      <line x1="148" y1="108" x2="148" y2="164" stroke="white" strokeWidth="2" opacity="0.35" />
+      <line x1="75" y1="134" x2="173" y2="134" stroke="white" strokeWidth="2" opacity="0.35" />
+
+      <circle cx="166" cy="156" r="22" fill="#16A34A" />
+      <line x1="166" y1="142" x2="166" y2="160" stroke="white" strokeWidth="5" strokeLinecap="round" />
+      <polyline points="156,153 166,164 176,153" fill="none" stroke="white" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

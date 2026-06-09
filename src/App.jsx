@@ -67,15 +67,15 @@ export default function App() {
           <div className="logo">
             <Logo size={44} />
             <div className="logo-text">
-              <span className="logo-title">Cheaper Closest Products</span>
-              <span className="logo-sub">Порівняй ціни у різних магазинах</span>
+              <span className="logo-title">NEAR DEAL</span>
+              <span className="logo-sub">Знайди дешевше поруч</span>
             </div>
           </div>
         </div>
       </header>
 
       <div className="demo-banner">
-        ⚠ Демо-режим — АТБ та METRO не мають публічних API, їхні дані демонстраційні. Сільпо — реальне API.
+        ⚠ Демо-режим — АТБ не має публічного API, його дані демонстраційні. Сільпо та METRO — реальні API.
       </div>
 
       <main className="app-main">

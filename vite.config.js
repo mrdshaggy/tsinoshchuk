@@ -15,6 +15,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/silpo-branches/, ''),
       },
+      '/metro-api': {
+        target: 'https://shop.metro.ua',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/metro-api/, ''),
+      },
+      '/metro-www': {
+        target: 'https://www.metro.ua',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/metro-www/, ''),
+      },
     },
   },
 })
