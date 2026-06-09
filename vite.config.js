@@ -5,10 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/zakaz-api': {
-        target: 'https://api.zakaz.ua',
+      '/silpo-api': {
+        target: 'https://api.catalog.ecom.silpo.ua',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/zakaz-api/, ''),
+        rewrite: (path) => path.replace(/^\/silpo-api/, ''),
+      },
+      '/silpo-branches': {
+        target: 'https://sf-ecom-api.silpo.ua',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/silpo-branches/, ''),
       },
     },
   },

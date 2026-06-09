@@ -334,6 +334,14 @@
   font-size: 12px;
   font-weight: 500;
 }
+.product-old-price {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+  text-decoration: line-through;
+  margin-top: 1px;
+}
 
 /* ── Spinner ──────────────────────────────────────────── */
 .spinner {

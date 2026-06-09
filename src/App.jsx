@@ -40,7 +40,7 @@ export default function App() {
     await Promise.all(
       shops.map(async (shop) => {
         try {
-          const products = await searchProducts(shop.store.id, query, shop.chainKey);
+          const products = await searchProducts(shop.store, query, shop.chainKey);
           const sorted = [...products].sort((a, b) => Number(a.price) - Number(b.price));
           setResults((prev) => ({
             ...prev,
@@ -75,7 +75,7 @@ export default function App() {
       </header>
 
       <div className="demo-banner">
-        ⚠ Демо-режим — АТБ, Сільпо та METRO не мають публічних API. Дані магазинів та цін демонстраційні.
+        ⚠ Демо-режим — АТБ та METRO не мають публічних API, їхні дані демонстраційні. Сільпо — реальне API.
       </div>
 
       <main className="app-main">

@@ -1,18 +1,4 @@
 export const MOCK_STORES = {
-  silpo: [
-    { id: 's1', title: 'Сільпо Хрещатик', address: 'вул. Хрещатик, 19, Київ', coordinates: { latitude: 50.4477, longitude: 30.5227 } },
-    { id: 's2', title: 'Сільпо Оболонь', address: 'просп. Оболонський, 1, Київ', coordinates: { latitude: 50.5167, longitude: 30.4978 } },
-    { id: 's3', title: 'Сільпо Позняки', address: 'просп. Бажана, 12, Київ', coordinates: { latitude: 50.3952, longitude: 30.6219 } },
-    { id: 's4', title: 'Сільпо Лівобережна', address: 'просп. Ватутіна, 2, Київ', coordinates: { latitude: 50.4625, longitude: 30.6384 } },
-    { id: 's5', title: 'Сільпо Академмістечко', address: 'просп. Перемоги, 136, Київ', coordinates: { latitude: 50.4675, longitude: 30.3658 } },
-    { id: 's6', title: 'Сільпо Троєщина', address: 'вул. Братиславська, 12, Київ', coordinates: { latitude: 50.5225, longitude: 30.6128 } },
-    { id: 's7', title: 'Сільпо Виноградар', address: 'вул. Ярослава Івашкевича, 3, Київ', coordinates: { latitude: 50.4873, longitude: 30.4031 } },
-    { id: 's8', title: 'Сільпо Дарниця', address: 'вул. Харківське шосе, 2, Київ', coordinates: { latitude: 50.4417, longitude: 30.6263 } },
-    { id: 's9', title: 'Сільпо Харків ЦУМ', address: 'вул. Сумська, 14, Харків', coordinates: { latitude: 49.9936, longitude: 36.2304 } },
-    { id: 's10', title: 'Сільпо Одеса Рішельєвська', address: 'вул. Рішельєвська, 33, Одеса', coordinates: { latitude: 46.4846, longitude: 30.7321 } },
-    { id: 's11', title: 'Сільпо Дніпро Центр', address: 'просп. Д. Яворницького, 67, Дніпро', coordinates: { latitude: 48.4647, longitude: 35.0462 } },
-    { id: 's12', title: 'Сільпо Львів Проспект', address: 'просп. Свободи, 28, Львів', coordinates: { latitude: 49.8418, longitude: 24.0316 } },
-  ],
   atb: [
     { id: 'a1', title: 'АТБ Борщагівська', address: 'вул. Борщагівська, 154, Київ', coordinates: { latitude: 50.4489, longitude: 30.4112 } },
     { id: 'a2', title: 'АТБ Троєщина', address: 'вул. Закревського, 29, Київ', coordinates: { latitude: 50.5173, longitude: 30.6005 } },
