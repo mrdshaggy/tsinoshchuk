@@ -214,10 +214,11 @@ const ATB_OVERPASS_QUERY =
   'out center;';
 
 async function getAtbStores() {
-  const res = await fetch(
-    `/overpass-api/api/interpreter?data=${encodeURIComponent(ATB_OVERPASS_QUERY)}`,
-    { headers: { Accept: 'application/json' } }
-  );
+  const res = await fetch('/overpass-api/api/interpreter', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'data=' + encodeURIComponent(ATB_OVERPASS_QUERY),
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
 
