@@ -10,97 +10,124 @@ function tokenize(title) {
   return (title || '').toLowerCase().split(/\s+/).map(stripDecorations).filter(w => w.length > 2);
 }
 
-// Words starting with an uppercase letter — typically brand names / proper nouns
 function extractCapitalized(title) {
-  return title
+  return (title || '')
     .replace(/[«»"'()[\]]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 2 && /^[А-ЯҐЄІЇЁA-Z]/.test(w))
     .map(w => w.toLowerCase().replace(/[,.!?:;]/g, ''));
 }
 
-// Parse fat/concentration percentage: "1,6%", "2.5%", "72%"
 function parsePercent(title) {
-  const m = title.match(/(\d+[,.]?\d*)\s*%/);
+  const m = (title || '').match(/(\d+[,.]?\d*)\s*%/);
   return m ? parseFloat(m[1].replace(',', '.')) : null;
 }
 
-// Parse weight/volume, normalize everything to grams (1кг=1000г, 1л≈1000г, 1мл≈1г)
-function parseWeightGrams(title) {
+function parseWeightGrams(str) {
+  if (!str) return null;
   let m;
-  m = title.match(/(\d+[,.]?\d*)\s*кг/i);
+  m = str.match(/(\d+[,.]?\d*)\s*кг/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 1000);
-  m = title.match(/(\d+[,.]?\d*)\s*мл/i);
+  m = str.match(/(\d+[,.]?\d*)\s*мл/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')));
-  // л — but not "ли", "ль", "лу" etc. (Cyrillic letters after л)
-  m = title.match(/(\d+[,.]?\d*)\s*л(?![а-яіїєґёa-z])/i);
+  m = str.match(/(\d+[,.]?\d*)\s*л(?![а-яіїєґёa-z])/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')) * 1000);
-  // г — but not "гр", "га" etc.
-  m = title.match(/(\d+[,.]?\d*)\s*г(?![а-яіїєґёa-z])/i);
+  m = str.match(/(\d+[,.]?\d*)\s*г(?![а-яіїєґёa-z])/i);
   if (m) return Math.round(parseFloat(m[1].replace(',', '.')));
   return null;
 }
 
-// Use the first 1-2 capitalized words (brand/product-type) as the cross-chain search query.
-// A short, focused query is more reliable across APIs than a long phrase.
+// First 1-2 capitalized words as cross-chain search query
 function makeCompareQuery(title) {
-  const caps = title
+  const caps = (title || '')
     .replace(/[«»"'()[\]]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 2 && /^[А-ЯҐЄІЇЁA-Z]/.test(w))
     .map(w => w.replace(/[,.!?:;]/g, ''));
   if (caps.length >= 1) return caps.slice(0, 2).join(' ');
-  // fallback: strip numbers/units, keep first 3 words
-  return title
+  return (title || '')
     .replace(/[«»"'()[\]]/g, ' ')
     .replace(/\b\d+[,.]?\d*\s*(г|кг|мл|л|шт|%)/gi, ' ')
     .replace(/\b\d+\b/g, ' ')
     .replace(/\s+/g, ' ').trim()
     .split(' ').filter(w => w.length > 2).slice(0, 3).join(' ')
-    || title.split(' ').slice(0, 2).join(' ');
+    || (title || '').split(' ').slice(0, 2).join(' ');
 }
 
-function findBestMatch(items, targetTitle) {
-  const valid = items.filter(item => item.title && item.price != null);
-  if (!valid.length) return null;
+// Returns up to maxResults matching items for a source product.
+// Matching logic:
+//   1. All source cap words must appear in candidate (product type + brand)
+//   2. Candidate must not have more foreign cap words than source has caps
+//   3. Fat % must agree if both have it
+//   4. Weight: exact match (±10g) preferred; mismatched weight accepted only if
+//      price-per-gram ratio is within 25% (handles 100г vs 1кг produce pricing)
+function findBestMatches(items, sourceProduct, maxResults = 3) {
+  const valid = items.filter(i => i.title && i.price != null);
+  if (!valid.length) return [];
 
-  const targetCaps = extractCapitalized(targetTitle);
-  const targetCapsSet = new Set(targetCaps);
-  // Require 2 capitalized-word matches if source has 2+, 1 if source has 1, 0 if none
-  const capRequired = Math.min(targetCaps.length, 2);
+  const sourceTitle = sourceProduct.title || '';
+  const sourceCaps = extractCapitalized(sourceTitle);
+  const sourceCapsSet = new Set(sourceCaps);
 
-  const targetPct = parsePercent(targetTitle);
-  const targetWeight = parseWeightGrams(targetTitle);
+  const sourceWeight = parseWeightGrams(sourceTitle)
+    ?? (sourceProduct.weight ? parseWeightGrams(String(sourceProduct.weight)) : null);
+  const sourcePrice = Number(sourceProduct.price);
+  const sourcePPG = sourceWeight ? sourcePrice / sourceWeight : null;
+  const sourcePct = parsePercent(sourceTitle);
 
-  const candidates = valid.filter(item => {
-    // 1. Name: capitalized-word threshold
-    if (capRequired > 0) {
-      const itemCaps = extractCapitalized(item.title);
-      const capMatches = itemCaps.filter(w => targetCapsSet.has(w)).length;
-      if (capMatches < capRequired) return false;
-    }
-    // 2. Fat/concentration %: if both have it, must match
+  // No cap words → fallback to word-overlap top-N
+  if (sourceCaps.length === 0) {
+    const targetSet = new Set(tokenize(sourceTitle));
+    return valid
+      .map(item => ({ item, score: tokenize(item.title).filter(w => targetSet.has(w)).length }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxResults)
+      .map(s => s.item);
+  }
+
+  const scored = valid.flatMap(item => {
+    const itemCaps = extractCapitalized(item.title);
+    const itemCapsSet = new Set(itemCaps);
+
+    // All source cap words must appear in candidate
+    const capOverlap = sourceCaps.filter(w => itemCapsSet.has(w)).length;
+    if (capOverlap < sourceCaps.length) return [];
+
+    // Candidate must not have more foreign caps than source has caps total
+    const foreignCaps = itemCaps.filter(w => !sourceCapsSet.has(w)).length;
+    if (foreignCaps > Math.max(sourceCaps.length, 1)) return [];
+
+    // Fat/concentration % must agree
     const itemPct = parsePercent(item.title);
-    if (targetPct !== null && itemPct !== null && Math.abs(targetPct - itemPct) > 0.05) return false;
-    // 3. Weight: if both have it, must match within 10g
-    const itemWeight = parseWeightGrams(item.title);
-    if (targetWeight !== null && itemWeight !== null && Math.abs(targetWeight - itemWeight) > 10) return false;
-    return true;
+    if (sourcePct !== null && itemPct !== null && Math.abs(sourcePct - itemPct) > 0.05) return [];
+
+    // Weight check
+    const itemWeight = parseWeightGrams(item.title)
+      ?? (item.weight ? parseWeightGrams(String(item.weight)) : null);
+    let exactWeight = false;
+    if (sourceWeight && itemWeight) {
+      const diff = Math.abs(sourceWeight - itemWeight);
+      if (diff <= 10) {
+        exactWeight = true;
+      } else {
+        // Different packaging unit — accept only if price/gram is within 25%
+        const itemPPG = Number(item.price) / itemWeight;
+        if (!sourcePPG || !itemPPG || Math.abs(sourcePPG - itemPPG) / sourcePPG > 0.25) return [];
+      }
+    }
+
+    return [{ item, capOverlap, foreignCaps, exactWeight, price: Number(item.price) }];
   });
 
-  if (!candidates.length) return null;
+  // Sort: exact weight > more cap overlap > fewer foreign caps > lower price
+  scored.sort((a, b) => {
+    if (a.exactWeight !== b.exactWeight) return a.exactWeight ? -1 : 1;
+    if (b.capOverlap !== a.capOverlap) return b.capOverlap - a.capOverlap;
+    if (a.foreignCaps !== b.foreignCaps) return a.foreignCaps - b.foreignCaps;
+    return a.price - b.price;
+  });
 
-  // Pick the highest word-overlap candidate
-  const targetTokens = tokenize(targetTitle);
-  const targetSet = new Set(targetTokens);
-  let best = null, bestScore = -1;
-  for (const item of candidates) {
-    const itemTokens = tokenize(item.title);
-    const overlap = itemTokens.filter(w => targetSet.has(w)).length;
-    const score = targetSet.size > 0 ? overlap / targetSet.size : 0;
-    if (score > bestScore) { bestScore = score; best = item; }
-  }
-  return best;
+  return scored.slice(0, maxResults).map(s => s.item);
 }
 
 export default function ProductCompareModal({ sourceProduct, sourceShopId, selectedShops, onAddToCart, onClose }) {
@@ -108,7 +135,7 @@ export default function ProductCompareModal({ sourceProduct, sourceShopId, selec
     selectedShops.map(s => ({
       shopEntry: s,
       loading: s.id !== sourceShopId,
-      product: s.id === sourceShopId ? sourceProduct : null,
+      products: s.id === sourceShopId ? [sourceProduct] : [],
       error: null,
     }))
   );
@@ -120,8 +147,8 @@ export default function ProductCompareModal({ sourceProduct, sourceShopId, selec
       const searchQuery = makeCompareQuery(sourceProduct.title);
       searchProducts(shopEntry.store, searchQuery, shopEntry.chainKey)
         .then(items => {
-          const match = findBestMatch(items, sourceProduct.title);
-          setComparisons(prev => prev.map((c, i) => i === idx ? { ...c, loading: false, product: match } : c));
+          const matches = findBestMatches(items, sourceProduct);
+          setComparisons(prev => prev.map((c, i) => i === idx ? { ...c, loading: false, products: matches } : c));
         })
         .catch(err => {
           setComparisons(prev => prev.map((c, i) => i === idx ? { ...c, loading: false, error: err.message } : c));
@@ -129,12 +156,13 @@ export default function ProductCompareModal({ sourceProduct, sourceShopId, selec
     });
   }, []);
 
-  const prices = comparisons.filter(c => c.product?.price != null).map(c => Number(c.product.price));
-  const minPrice = prices.length > 1 ? Math.min(...prices) : null;
+  const allPrices = comparisons.flatMap(c => c.products.map(p => Number(p.price)).filter(p => !isNaN(p) && p > 0));
+  const minPrice = allPrices.length > 1 ? Math.min(...allPrices) : null;
 
   function handleAdd(shopEntry, product) {
+    const key = `${shopEntry.id}-${product.ean}`;
     onAddToCart(shopEntry, product);
-    setAdded(prev => new Set([...prev, shopEntry.id]));
+    setAdded(prev => new Set([...prev, key]));
   }
 
   return (
@@ -146,10 +174,8 @@ export default function ProductCompareModal({ sourceProduct, sourceShopId, selec
         </div>
         <div className="compare-product-name">{sourceProduct.title}</div>
         <div className="compare-grid">
-          {comparisons.map(({ shopEntry, loading, product, error }) => {
+          {comparisons.map(({ shopEntry, loading, products, error }) => {
             const chain = CHAINS[shopEntry.chainKey];
-            const isCheapest = product?.price != null && minPrice != null && Number(product.price) === minPrice;
-            const isAdded = added.has(shopEntry.id);
             return (
               <div key={shopEntry.id} className="compare-col">
                 <div className="compare-col-header" style={{ '--c': chain.color, '--bg': chain.bg }}>
@@ -163,22 +189,27 @@ export default function ProductCompareModal({ sourceProduct, sourceShopId, selec
                     </div>
                   )}
                   {error && <div className="column-status column-error">⚠ {error}</div>}
-                  {!loading && !error && !product && (
+                  {!loading && !error && products.length === 0 && (
                     <div className="column-status column-empty">Не знайдено</div>
                   )}
-                  {!loading && !error && product && (
-                    <div className="compare-product-wrap">
-                      <ProductCard product={product} color={chain.color} isCheapest={isCheapest} />
-                      <button
-                        className={`compare-add-btn${isAdded ? ' compare-add-btn--added' : ''}`}
-                        style={isAdded ? {} : { '--c': chain.color }}
-                        onClick={() => !isAdded && handleAdd(shopEntry, product)}
-                        disabled={isAdded}
-                      >
-                        {isAdded ? '✓ В кошику' : '+ До кошика'}
-                      </button>
-                    </div>
-                  )}
+                  {!loading && !error && products.map((product, pi) => {
+                    const isCheapest = product.price != null && minPrice != null && Number(product.price) === minPrice;
+                    const addKey = `${shopEntry.id}-${product.ean ?? pi}`;
+                    const isAdded = added.has(addKey);
+                    return (
+                      <div key={product.ean ?? pi} className={`compare-product-wrap${pi > 0 ? ' compare-product-wrap--sep' : ''}`}>
+                        <ProductCard product={product} color={chain.color} isCheapest={isCheapest} />
+                        <button
+                          className={`compare-add-btn${isAdded ? ' compare-add-btn--added' : ''}`}
+                          style={isAdded ? {} : { '--c': chain.color }}
+                          onClick={() => !isAdded && handleAdd(shopEntry, product)}
+                          disabled={isAdded}
+                        >
+                          {isAdded ? '✓ В кошику' : '+ До кошика'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
