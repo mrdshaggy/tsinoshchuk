@@ -234,6 +234,13 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  padding-bottom: 30px;
+}
+
+@media (min-width: 768px) {
+  .results-grid {
+    padding-bottom: 0;
+  }
 }
 
 /* ── Shop column ──────────────────────────────────────── */
