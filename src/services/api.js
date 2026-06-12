@@ -200,7 +200,7 @@ const ATB_OVERPASS_QUERY =
   'out center;';
 
 async function getAtbStores() {
-  const res = await fetch('/overpass-api/api/interpreter', {
+  const res = await fetch('/api/overpass', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'data=' + encodeURIComponent(ATB_OVERPASS_QUERY),

@@ -26,10 +26,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/metro-www/, ''),
       },
-      '/overpass-api': {
+      '/api/overpass': {
         target: 'https://overpass-api.de',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/overpass-api/, ''),
+        rewrite: () => '/api/interpreter',
       },
     },
   },
