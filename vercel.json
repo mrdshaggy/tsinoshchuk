@@ -3,7 +3,6 @@
     { "source": "/silpo-api/:path*",    "destination": "https://api.catalog.ecom.silpo.ua/:path*" },
     { "source": "/silpo-branches/:path*", "destination": "https://sf-ecom-api.silpo.ua/:path*" },
     { "source": "/metro-api/:path*",    "destination": "https://shop.metro.ua/:path*" },
-    { "source": "/metro-www/:path*",    "destination": "https://www.metro.ua/:path*" },
-    { "source": "/atb-market/:path*",   "destination": "https://www.atbmarket.com/:path*" }
+    { "source": "/metro-www/:path*",    "destination": "https://www.metro.ua/:path*" }
   ]
 }

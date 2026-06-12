@@ -26,11 +26,6 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/metro-www/, ''),
       },
-      '/atb-market': {
-        target: 'https://www.atbmarket.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/atb-market/, ''),
-      },
     },
   },
 })

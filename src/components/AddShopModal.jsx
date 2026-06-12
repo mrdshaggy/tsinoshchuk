@@ -19,6 +19,12 @@ export default function AddShopModal({ onAdd, onClose }) {
   }, []);
 
   async function pickChain(key) {
+    // ATB has national pricing — no store picker needed
+    if (key === 'atb') {
+      onAdd(key, { id: 'atb-national', title: 'АТБ-Маркет', address: 'Загальнонаціональні ціни', coordinates: null });
+      return;
+    }
+
     setActiveChain(key);
     setStep('store');
     setLoading(true);
