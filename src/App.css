@@ -1,11 +1,15 @@
 /* ── Layout ────────────────────────────────────────────── */
 .app {
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: #f7f8fa;
+}
+
+@media (min-width: 768px) {
+  .app {
+    height: 100dvh;
+    overflow: hidden;
+  }
 }
 
 /* ── Header ────────────────────────────────────────────── */
@@ -241,6 +245,11 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
+}
+@media (max-width: 769px) {
+  .shop-column {
+    max-height: 320px;
+  }
 }
 .column-header {
   background: var(--bg);
@@ -662,7 +671,7 @@
   flex-direction: column;
 }
 .compare-product-name {
-  padding: 0 20px 12px;
+  padding: 12px 20px;
   font-size: 14px;
   color: #6b7280;
   border-bottom: 1px solid #e5e7eb;
@@ -681,7 +690,7 @@
   align-items: flex-start;
 }
 .compare-col {
-  min-width: 200px;
+  min-width: 270px;
   flex: 1;
   display: flex;
   flex-direction: column;
