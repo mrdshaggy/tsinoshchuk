@@ -250,7 +250,7 @@ async function searchAtbProducts(query) {
     q: 'nd',
     query,
     s: 'medium',
-    uid: 'neardeal-0000-0000-0000-000000000001',
+    uid: 'tsinoshchuk-0000-0000-0000-000000000001',
   });
   const res = await fetch(`https://api.multisearch.io/?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

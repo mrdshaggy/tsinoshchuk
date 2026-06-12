@@ -1,7 +1,7 @@
-# NearDeal — Current State
+# Цінощук — Current State
 
 ## What it is
-A Ukrainian grocery price comparison SPA — pick stores from multiple chains, search a product, see prices side-by-side, compare across shops, and build a shopping cart printable as PDF. React 19 + Vite, no UI library, plain CSS. Branded as **NearDeal** ("Знайди дешевше поруч").
+A Ukrainian grocery price comparison SPA — pick stores from multiple chains, search a product, see prices side-by-side, compare across shops, and build a shopping cart printable as PDF. React 19 + Vite, no UI library, plain CSS. Branded as **Цінощук** ("Знайди дешевше поруч").
 
 ---
 
@@ -19,7 +19,7 @@ src/
 │   ├── ProductCompareModal.jsx    # cross-shop product comparison + add-to-cart
 │   ├── CartDrawer.jsx             # slide-in cart grouped by shop + print/PDF
 │   ├── SearchBar.jsx              # search input + button
-│   └── Logo.jsx                  # NearDeal pin+basket SVG icon
+│   └── Logo.jsx                  # Цінощук pin+basket SVG icon
 ├── services/
 │   ├── api.js                     # all fetch logic + CHAINS config
 │   └── mockData.js                # unused legacy (ATB mock data, kept as fallback)
@@ -27,8 +27,8 @@ src/
 │   └── geo.js                     # getCurrentPosition, haversineKm, formatDistance
 └── assets/
     └── neardeal_icon.svg          # source icon file
-index.html                         # title: NearDeal, favicon: /favicon.svg
-public/favicon.svg                 # NearDeal pin+basket icon
+index.html                         # title: Цінощук, favicon: /favicon.svg
+public/favicon.svg                 # Цінощук pin+basket icon
 vite.config.js                     # 5 proxies: /silpo-api, /silpo-branches, /metro-api, /metro-www, /overpass-api
 .github/workflows/deploy.yml       # GitHub Actions: build + deploy to gh-pages branch
 ```
@@ -49,19 +49,19 @@ vite.config.js                     # 5 proxies: /silpo-api, /silpo-branches, /me
 
 | File | Role |
 |------|------|
-| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/overpass-api` → `overpass-api.de`. Also `base: '/ccp/'` for GitHub Pages. |
+| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/overpass-api` → `overpass-api.de`. Also `base: '/tsinoshchuk/'` for GitHub Pages. |
 | `src/services/api.js` | All fetch logic. `getStores(hub)` and `searchProducts(store, query, chainKey)` are the public exports. Silpo: ecom API for products, `images.silpo.ua` CDN for images (no proxy needed). ATB: `extractAtbWeight()` parses weight string from product title (кг→кг, г→г, мл→мл, л→л). |
 | `src/App.jsx` | State: `selectedShops[]`, `results{}`, `currentQuery`, `compareModal`, `cart{}`, `isCartOpen`. `addShop` auto-searches `currentQuery` for the new shop if a query is already active (prevents crash when adding a shop after a search). `addToCart(shopEntry, product)` deduplicates by EAN. `removeFromCart(shopId, ean)` auto-removes empty shop buckets. Cart icon in header shows badge count. |
 | `src/App.css` | Fixed-height viewport layout: `height: 100dvh; overflow: hidden` on `.app`. Flex column chain: `.app-main` → `.results-grid` (flex:1) → `.shop-column` → `.column-body` (overflow-y: auto). Per-column independent scroll. Print CSS: `body * { visibility: hidden }` + cart-drawer override for clean print/PDF output. |
-| `src/components/Logo.jsx` | NearDeal pin+basket SVG. `viewBox="0 0 248 340"`, `width={size}` prop (portrait, aspect-ratio preserved). Blue pin (#2563EB), green badge (#16A34A). |
+| `src/components/Logo.jsx` | Цінощук pin+basket SVG. `viewBox="0 0 248 340"`, `width={size}` prop (portrait, aspect-ratio preserved). Blue pin (#2563EB), green badge (#16A34A). |
 | `src/components/ProductCard.jsx` | `onClick` → makes card clickable. `isCheapest` → green "Дешевше" badge + green border. Renders `oldPrice` strikethrough when `oldPrice > price`. `onError` on img replaces broken image with emoji placeholder div. |
 | `src/components/ShopColumn.jsx` | Accepts `onCardClick(product, shop)` prop, passes `() => onCardClick(p, shop)` to each ProductCard. |
 | `src/components/ResultsGrid.jsx` | Threads `onCardClick` prop down to ShopColumn. |
 | `src/components/ProductCompareModal.jsx` | On open: shows source product immediately, searches all other shops in parallel using `makeCompareQuery` (first 1-2 capitalized words). `findBestMatches` returns up to 3 items per shop. Each column can show 0–3 stacked ProductCards with individual "До кошика" buttons. Cheapest badge compares across all products from all shops globally. Cart keys are `shopId-ean`. |
 | `src/components/CartDrawer.jsx` | Slide-in from right. Grouped by shop (chain color header). Per-shop subtotal + grand total. Remove items with ✕. "Друк / PDF" calls `window.print()`. |
 | `src/services/mockData.js` | Legacy ATB mock data — no longer used in production paths but kept. |
-| `public/favicon.svg` | NearDeal pin+basket icon (same as Logo.jsx, plain SVG attributes). |
-| `index.html` | Page title: NearDeal. Favicon: `/favicon.svg`. |
+| `public/favicon.svg` | Цінощук pin+basket icon (same as Logo.jsx, plain SVG attributes). |
+| `index.html` | Page title: Цінощук. Favicon: `/favicon.svg`. |
 
 ---
 

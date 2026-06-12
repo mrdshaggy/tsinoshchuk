@@ -114,7 +114,7 @@ export default function App() {
           <div className="logo">
             <Logo size={44} />
             <div className="logo-text">
-              <span className="logo-title">NEAR DEAL</span>
+              <span className="logo-title">ЦІНОЩУК</span>
               <span className="logo-sub">Знайди дешевше поруч</span>
             </div>
           </div>
