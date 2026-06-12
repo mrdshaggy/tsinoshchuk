@@ -25,7 +25,7 @@ export default function AddShopModal({ onAdd, onClose }) {
     setError(null);
     setStoreSearch('');
     try {
-      let list = await getStores(CHAINS[key].hub);
+      let list = await getStores(CHAINS[key].hub, userPos);
       if (userPos) {
         list = list
           .map((s) => {

@@ -41,7 +41,7 @@ vite.config.js                     # 5 proxies: /silpo-api, /silpo-branches, /me
 |-------|--------|----------|-------|
 | **Сільпо** | Live — `sf-ecom-api.silpo.ua` | Live — same API | Multi-word fallback: if phrase returns 0, searches each word separately and intersects by UUID. Images from `images.silpo.ua/v2/products/300x300/webp/{icon}` (icon UUID in API response). |
 | **METRO** | Live — `www.metro.ua/sxa/search/results` (26 stores) | Live — 2-step: search → betty-variants | `x-sd-token: mq6k5cu8` static header. Store locator parses HTML: radio `value` = storeId (zero-padded to 5 digits). Coordinates from `Geospatial` field. |
-| **АТБ** | Live — OpenStreetMap Overpass API (~1234 stores, Ukraine bbox 44,22,52.5,40.5) | Live — `api.multisearch.io` | `brand:wikidata=Q4054103`. Overpass requires POST. Products: `id=11280`, `key=63a6d0a760fd2d0562c4061b78e64754`, CORS-enabled (no proxy needed). National pricing (not store-specific). Weight parsed from title. |
+| **АТБ** | Live — `www.atbmarket.com/site/getstore` (POST, no city = all stores). Top 50 nearest enriched with addresses via `wdelivery?nstore_id=`. | Live — `api.multisearch.io` | Products: `id=11280`, `key=63a6d0a760fd2d0562c4061b78e64754`, CORS-enabled (no proxy needed). National pricing (not store-specific). Weight parsed from title. |
 
 ---
 
@@ -49,8 +49,8 @@ vite.config.js                     # 5 proxies: /silpo-api, /silpo-branches, /me
 
 | File | Role |
 |------|------|
-| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/overpass-api` → `overpass-api.de`. Also `base: '/'` for Vercel deployment. `vercel.json` rewrites handle CORS proxying for all 5 APIs. |
-| `src/services/api.js` | All fetch logic. `getStores(hub)` and `searchProducts(store, query, chainKey)` are the public exports. Silpo: ecom API for products, `images.silpo.ua` CDN for images (no proxy needed). ATB: `extractAtbWeight()` parses weight string from product title (кг→кг, г→г, мл→мл, л→л). |
+| `vite.config.js` | 5 dev proxies: `/silpo-api` → `api.catalog.ecom.silpo.ua`, `/silpo-branches` → `sf-ecom-api.silpo.ua`, `/metro-api` → `shop.metro.ua`, `/metro-www` → `www.metro.ua`, `/atb-market` → `www.atbmarket.com`. `base: '/'` for Vercel. `vercel.json` rewrites proxy all 5 APIs server-side. |
+| `src/services/api.js` | All fetch logic. `getStores(hub, userPos?)` and `searchProducts(store, query, chainKey)` are the public exports. Silpo: ecom API for products, `images.silpo.ua` CDN for images (no proxy needed). ATB: `extractAtbWeight()` parses weight string from product title (кг→кг, г→г, мл→мл, л→л). |
 | `src/App.jsx` | State: `selectedShops[]`, `results{}`, `currentQuery`, `compareModal`, `cart{}`, `isCartOpen`. `addShop` auto-searches `currentQuery` for the new shop if a query is already active (prevents crash when adding a shop after a search). `addToCart(shopEntry, product)` deduplicates by EAN. `removeFromCart(shopId, ean)` auto-removes empty shop buckets. Cart icon in header shows badge count. |
 | `src/App.css` | Fixed-height viewport layout: `height: 100dvh; overflow: hidden` on `.app`. Flex column chain: `.app-main` → `.results-grid` (flex:1) → `.shop-column` → `.column-body` (overflow-y: auto). Per-column independent scroll. Print CSS: `body * { visibility: hidden }` + cart-drawer override for clean print/PDF output. |
 | `src/components/Logo.jsx` | Цінощук pin+basket SVG. `viewBox="0 0 248 340"`, `width={size}` prop (portrait, aspect-ratio preserved). Blue pin (#2563EB), green badge (#16A34A). |

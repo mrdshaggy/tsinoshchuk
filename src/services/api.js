@@ -1,4 +1,5 @@
 import { mockGetStores, mockSearchProducts } from './mockData';
+import { haversineKm } from '../utils/geo';
 
 export const CHAINS = {
   silpo: { name: 'Сільпо', color: '#FF8521', bg: '#fff8f2', hub: 'silpo' },
@@ -192,40 +193,52 @@ async function searchMetroProducts(storeId, query) {
   });
 }
 
-// ── АТБ (OpenStreetMap / Overpass) ────────────────────────────
+// ── АТБ (atbmarket.com) ───────────────────────────────────────
 
-const ATB_OVERPASS_QUERY =
-  '[out:json][timeout:60];' +
-  '(node["brand:wikidata"="Q4054103"](44,22,52.5,40.5);' +
-  'way["brand:wikidata"="Q4054103"](44,22,52.5,40.5););' +
-  'out center;';
-
-async function getAtbStores() {
-  const res = await fetch('/overpass-api/api/interpreter', {
+async function getAtbStores(userPos = null) {
+  const res = await fetch('/atb-market/site/getstore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'data=' + encodeURIComponent(ATB_OVERPASS_QUERY),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
 
-  return (data.elements ?? []).flatMap((el) => {
-    const lat = el.lat ?? el.center?.lat ?? 0;
-    const lon = el.lon ?? el.center?.lon ?? 0;
-    if (!lat || !lon) return [];
-    const t = el.tags ?? {};
-    const city = t['addr:city'] ?? '';
-    const street = t['addr:street'] ?? '';
-    const num = t['addr:housenumber'] ?? '';
-    const addressLine = [street, num].filter(Boolean).join(' ');
-    const titleExtra = [city, street].filter(Boolean).join(', ');
-    return [{
-      id: `osm-${el.id}`,
-      title: titleExtra ? `АТБ-Маркет ${titleExtra}` : 'АТБ-Маркет',
-      address: [addressLine, city].filter(Boolean).join(', '),
-      coordinates: { latitude: lat, longitude: lon },
-    }];
-  });
+  let stores = (data.coordinates ?? []).map(el => ({
+    id: String(el.id),
+    title: `АТБ-Маркет #${el.id}`,
+    address: '',
+    coordinates: { latitude: parseFloat(el.lat), longitude: parseFloat(el.lng) },
+  }));
+
+  // Sort by distance so we enrich the nearest stores first
+  if (userPos) {
+    stores = stores
+      .map(s => [s, haversineKm(userPos.lat, userPos.lng, s.coordinates.latitude, s.coordinates.longitude)])
+      .sort(([, da], [, db]) => da - db)
+      .map(([s]) => s);
+  }
+
+  // Enrich top 50 with real addresses via wdelivery
+  const topN = Math.min(50, stores.length);
+  const enriched = await Promise.allSettled(
+    stores.slice(0, topN).map(s =>
+      fetch(`/atb-market/shop/catalog/wdelivery?nstore_id=${s.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          const city = d?.out?.city ?? '';
+          const street = (d?.out?.address ?? '').replace(/^№\d+\s*/, '').trim();
+          return {
+            ...s,
+            title: city ? `АТБ-Маркет ${city}` : `АТБ-Маркет #${s.id}`,
+            address: [street, city].filter(Boolean).join(', '),
+          };
+        })
+        .catch(() => s)
+    )
+  );
+
+  const enrichedStores = enriched.map((r, i) => r.status === 'fulfilled' ? r.value : stores[i]);
+  return [...enrichedStores, ...stores.slice(topN)];
 }
 
 function extractAtbWeight(title) {
@@ -271,10 +284,10 @@ async function searchAtbProducts(query) {
 
 // ── Public API ───────────────────────────────────────────────
 
-export async function getStores(hub) {
+export async function getStores(hub, userPos = null) {
   if (hub === 'silpo') return getSilpoStores();
   if (hub === 'metro') return getMetroStores();
-  if (hub === 'atbmarket') return getAtbStores();
+  if (hub === 'atbmarket') return getAtbStores(userPos);
   const chainKey = Object.keys(CHAINS).find((k) => CHAINS[k].hub === hub);
   return mockGetStores(chainKey);
 }
